@@ -1,0 +1,558 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Déclaration Transport Explosifs</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- SheetJS for Excel support -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div>
+                    <h1>🚛 Déclaration Transport Explosifs</h1>
+                    <p>Système de génération de déclarations</p>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                    <div style="position: relative;">
+                        <button type="button" class="btn btn-primary" onclick="toggleQuickAddMenu()">
+                            ➕ Ajouter Rapide
+                        </button>
+                        <div id="quickAddMenu" class="quick-add-menu" style="display: none;">
+                            <button type="button" class="quick-add-item" onclick="showAddClientModal(); closeQuickAddMenu();">
+                                👤 Client
+                            </button>
+                            <button type="button" class="quick-add-item" onclick="showAddDriverModal(); closeQuickAddMenu();">
+                                🚗 Conducteur
+                            </button>
+                            <button type="button" class="quick-add-item" onclick="showAddConvoyeurModal(); closeQuickAddMenu();">
+                                🛡️ Convoyeur
+                            </button>
+                            <button type="button" class="quick-add-item" onclick="showAddProductModal(); closeQuickAddMenu();">
+                                📦 Produit
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-info" onclick="showHistory()">
+                        📋 Historique
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="showDataManagement()">
+                        💾 Gestion Données
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Progress Steps -->
+        <div class="progress-container">
+            <div class="progress-steps">
+                <div class="progress-line" id="progressLine" style="width: 0%"></div>
+                <div class="step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Client</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Conducteur</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Convoyeur</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">Déclaration</div>
+                </div>
+                <div class="step" data-step="5">
+                    <div class="step-circle">5</div>
+                    <div class="step-label">Confirmation</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <form id="declarationForm">
+                <!-- Step 1: Client -->
+                <div class="form-section active" data-section="1">
+                    <h2 class="section-title">Informations Client</h2>
+                    <p class="section-description">Sélectionnez le client et vérifiez les informations de destination</p>
+
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="clientSelect">Client <span class="required-mark">*</span></label>
+                            <div style="display: flex; gap: 8px;">
+                                <select id="clientSelect" class="form-control searchable-select" required style="flex: 1;">
+                                    <option value="">Sélectionner un client...</option>
+                                </select>
+                                <button type="button" class="btn btn-secondary" onclick="showAddClientModal()">＋</button>
+                            </div>
+                            <span class="error-message">Veuillez sélectionner un client</span>
+                            <div id="clientEmptyMessage" style="display: none; margin-top: 8px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; font-size: 0.9em;">
+                                <strong>ℹ️ Aucun client trouvé.</strong> Utilisez le bouton <strong>"💾 Gestion Données"</strong> en haut pour importer <code>clients.xlsx</code> ou ajoutez un client avec le bouton <strong>"＋"</strong>.
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="destination">Destination</label>
+                            <input type="text" id="destination" class="form-control" placeholder="Auto-rempli (modifiable)">
+                        </div>
+
+                <div class="form-group">
+                            <label for="antenne">Antenne</label>
+                            <input type="text" id="antenne" class="form-control" placeholder="Auto-rempli (modifiable)">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Itinéraire prévu</label>
+                            <div id="itineraireBox" class="itineraire-box empty"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Driver -->
+                <div class="form-section" data-section="2">
+                    <h2 class="section-title">Informations Conducteur</h2>
+                    <p class="section-description">Sélectionnez le conducteur et son véhicule</p>
+
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="driverSelect">Conducteur <span class="required-mark">*</span></label>
+                            <div style="display: flex; gap: 8px;">
+                                <select id="driverSelect" class="form-control searchable-select" required style="flex: 1;">
+                                    <option value="">Sélectionner un conducteur...</option>
+                                </select>
+                                <button type="button" class="btn btn-secondary" onclick="showAddDriverModal()">＋</button>
+                            </div>
+                            <span class="error-message">Veuillez sélectionner un conducteur</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="driverCIN">N° CIN</label>
+                            <input type="text" id="driverCIN" class="form-control" placeholder="Auto-rempli (modifiable)">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="driverPhone">Téléphone</label>
+                            <input type="text" id="driverPhone" class="form-control" placeholder="Auto-rempli (modifiable)">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="vehicleMatricule">Matricule Véhicule</label>
+                            <input type="text" id="vehicleMatricule" class="form-control" placeholder="Auto-rempli (modifiable)">
+                        </div>
+
+                <div class="form-group">
+                            <label for="vehicleModel">Modèle Véhicule</label>
+                            <input type="text" id="vehicleModel" class="form-control" placeholder="Auto-rempli (modifiable)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Escort -->
+                <div class="form-section" data-section="3">
+                    <h2 class="section-title">Informations Convoyeur</h2>
+                    <p class="section-description">Sélectionnez le convoyeur pour l'accompagnement</p>
+
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="convoyeurSelect">Convoyeur <span class="required-mark">*</span></label>
+                            <div style="display: flex; gap: 8px;">
+                                <select id="convoyeurSelect" class="form-control searchable-select" required style="flex: 1;">
+                                    <option value="">Sélectionner un convoyeur...</option>
+                                </select>
+                                <button type="button" class="btn btn-secondary" onclick="showAddConvoyeurModal()">＋</button>
+                            </div>
+                            <span class="error-message">Veuillez sélectionner un convoyeur</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="convoyeurCard">N° Carte de Contrôle</label>
+                            <input type="text" id="convoyeurCard" class="form-control" placeholder="Auto-rempli (modifiable)">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="convoyeurCIN">N° CIN</label>
+                            <input type="text" id="convoyeurCIN" class="form-control" placeholder="Auto-rempli (modifiable)">
+                        </div>
+
+                <div class="form-group">
+                            <label for="convoyeurPhone">Téléphone</label>
+                            <input type="text" id="convoyeurPhone" class="form-control" placeholder="Auto-rempli (modifiable)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Declaration -->
+                <div class="form-section" data-section="4">
+                    <h2 class="section-title">Détails de la Déclaration</h2>
+                    <p class="section-description">Remplissez les informations de transport et produits</p>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="documentNumber">N° Document <span class="required-mark">*</span></label>
+                            <input type="text" id="documentNumber" class="form-control" placeholder="Auto-généré (modifiable)" required>
+                            <small style="color: #666; font-size: 0.85em;">Le numéro s'incrémente automatiquement, mais vous pouvez le modifier</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="date">Date <span class="required-mark">*</span></label>
+                            <input type="date" id="date" class="form-control" required>
+                        </div>
+
+                <div class="form-group">
+                            <label for="dateDepart">Date de Départ <span class="required-mark">*</span></label>
+                            <input type="datetime-local" id="dateDepart" class="form-control" required>
+                </div>
+
+                        <div class="form-group full-width">
+                            <label>Produits Transportés</label>
+                            <div class="products-list" id="productsContainer">
+                                <div class="product-row">
+                <div class="form-group">
+                                        <label>Produit</label>
+                                        <select class="form-control product-select searchable-select" required>
+                                            <option value="">Sélectionner...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                                        <label>Quantité</label>
+                                        <input type="number" class="form-control product-quantity" placeholder="0" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                                        <label>Unité</label>
+                                        <input type="text" class="form-control product-unit" placeholder="Auto-rempli (modifiable)">
+                </div>
+                <div class="form-group">
+                                        <label style="opacity: 0;">Action</label>
+                                        <button type="button" class="btn btn-danger" onclick="removeProduct(this)">🗑️</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn btn-success" onclick="addProduct()">➕ Ajouter un produit</button>
+                                <button type="button" class="btn btn-secondary" onclick="showAddProductModal()">＋ Nouveau Produit</button>
+                            </div>
+                </div>
+
+                <div class="form-group">
+                            <label for="passavantNumber">N° Passavant <span class="required-mark">*</span></label>
+                            <input type="text" id="passavantNumber" class="form-control" placeholder="Ex: 21611" required>
+                </div>
+
+                <div class="form-group">
+                            <label for="passavantExpiry">Expiration Passavant <span class="required-mark">*</span></label>
+                            <input type="date" id="passavantExpiry" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                            <label for="bonLivraison">Bon de Livraison</label>
+                            <input type="text" id="bonLivraison" class="form-control" placeholder="Ex: 250301916 (optionnel)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Summary -->
+                <div class="form-section" data-section="5">
+                    <h2 class="section-title">Récapitulatif</h2>
+                    <p class="section-description">Vérifiez toutes les informations avant de générer la déclaration</p>
+
+                    <div class="info-card">
+                        <div class="info-card-title">📋 Informations importantes</div>
+                        <div class="info-card-content">
+                            Assurez-vous que toutes les informations sont correctes avant de générer le document final. Une fois généré, vous pourrez l'imprimer ou le télécharger.
+                        </div>
+                    </div>
+
+                    <div class="summary-grid" id="summaryContent">
+                        <!-- Will be filled by JavaScript -->
+                </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="prevBtn" onclick="prevStep()" style="display: none;">
+                        ← Précédent
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                        Suivant →
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">
+                        🎉 Générer la Déclaration
+                    </button>
+                    <button type="button" class="btn btn-success" id="downloadCSVBtn" onclick="downloadCSV()" style="margin-left: 10px;">
+                        📥 Télécharger CSV
+                    </button>
+                </div>
+            </form>
+            </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 Historique des Déclarations</h2>
+                <button class="modal-close" onclick="closeHistory()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 15px;">
+                    <button class="btn btn-success" onclick="downloadCSV()" style="margin-right: 10px;">
+                        📥 Télécharger CSV
+                    </button>
+                    <button class="btn btn-info" onclick="loadHistoryFromFile()" style="margin-right: 10px;">
+                        🔄 Charger depuis history.xlsx
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearHistory()">
+                        🗑️ Effacer l'historique
+                    </button>
+                </div>
+                <div id="historyContent" style="max-height: 500px; overflow-y: auto;">
+                    <!-- History will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal ajout client -->
+    <div id="addClientModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 style="margin:0;">Ajouter un client</h2>
+                <button class="modal-close" onclick="closeAddClientModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nom du client *</label>
+                    <input type="text" id="addClientName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Destination *</label>
+                    <input type="text" id="addClientDestination" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Antenne *</label>
+                    <input type="text" id="addClientAntenne" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Itinéraire (séparé par des virgules)</label>
+                    <input type="text" id="addClientItineraire" class="form-control" placeholder="Point A, Point B, Point C">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+                    <button class="btn btn-secondary" type="button" onclick="closeAddClientModal()">Annuler</button>
+                    <button class="btn btn-primary" type="button" onclick="saveNewClient()">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal ajout convoyeur -->
+    <div id="addConvoyeurModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 style="margin:0;">Ajouter un convoyeur</h2>
+                <button class="modal-close" onclick="closeAddConvoyeurModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nom du convoyeur *</label>
+                    <input type="text" id="addConvoyeurName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>CIN *</label>
+                    <input type="text" id="addConvoyeurCIN" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Téléphone *</label>
+                    <input type="text" id="addConvoyeurPhone" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>N° Carte de Contrôle (CCE)</label>
+                    <input type="text" id="addConvoyeurCCE" class="form-control" placeholder="Optionnel">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+                    <button class="btn btn-secondary" type="button" onclick="closeAddConvoyeurModal()">Annuler</button>
+                    <button class="btn btn-primary" type="button" onclick="saveNewConvoyeur()">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal ajout conducteur -->
+    <div id="addDriverModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 style="margin:0;">Ajouter un conducteur</h2>
+                <button class="modal-close" onclick="closeAddDriverModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nom du conducteur *</label>
+                    <input type="text" id="addDriverName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>CIN *</label>
+                    <input type="text" id="addDriverCIN" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Téléphone *</label>
+                    <input type="text" id="addDriverPhone" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Matricule Véhicule *</label>
+                    <input type="text" id="addDriverMatricule" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Modèle Véhicule *</label>
+                    <input type="text" id="addDriverModel" class="form-control" required>
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+                    <button class="btn btn-secondary" type="button" onclick="closeAddDriverModal()">Annuler</button>
+                    <button class="btn btn-primary" type="button" onclick="saveNewDriver()">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal ajout produit -->
+    <div id="addProductModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 style="margin:0;">Ajouter un produit</h2>
+                <button class="modal-close" onclick="closeAddProductModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nom du produit *</label>
+                    <input type="text" id="addProductName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Unité *</label>
+                    <input type="text" id="addProductUnit" class="form-control" required placeholder="kg, m, unité, etc.">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+                    <button class="btn btn-secondary" type="button" onclick="closeAddProductModal()">Annuler</button>
+                    <button class="btn btn-primary" type="button" onclick="saveNewProduct()">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gestion Données (Export/Import) -->
+    <div id="dataManagementModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 style="margin:0;">💾 Gestion des Données</h2>
+                <button class="modal-close" onclick="closeDataManagement()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                    <strong>ℹ️ Information:</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9em;">
+                        Les données sont sauvegardées automatiquement dans le navigateur (localStorage). 
+                        Utilisez les boutons ci-dessous pour exporter/importer des fichiers JSON de sauvegarde.
+                    </p>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 10px;">📤 Exporter (Télécharger) - Excel uniquement</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-success" onclick="exportDataToExcel('clients')">
+                        📊 Clients.xlsx
+                    </button>
+                    <button class="btn btn-success" onclick="exportDataToExcel('drivers')">
+                        📊 Drivers.xlsx
+                    </button>
+                    <button class="btn btn-success" onclick="exportDataToExcel('convoyeurs')">
+                        📊 Convoyeurs.xlsx
+                    </button>
+                    <button class="btn btn-success" onclick="exportDataToExcel('products')">
+                        📊 Products.xlsx
+                    </button>
+                    <button class="btn btn-success" onclick="exportDataToExcel('history')">
+                        📊 History.xlsx
+                    </button>
+                    <button class="btn btn-primary" onclick="exportAllData()" style="grid-column: 1 / -1;">
+                        💾 Exporter Tout Excel (Backup Complet)
+                    </button>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 10px;">📥 Importer (Charger depuis fichier) - Excel uniquement</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-info" onclick="importDataFromExcel('clients')">
+                        📊 Clients.xlsx
+                    </button>
+                    <button class="btn btn-info" onclick="importDataFromExcel('drivers')">
+                        📊 Drivers.xlsx
+                    </button>
+                    <button class="btn btn-info" onclick="importDataFromExcel('convoyeurs')">
+                        📊 Convoyeurs.xlsx
+                    </button>
+                    <button class="btn btn-info" onclick="importDataFromExcel('products')">
+                        📊 Products.xlsx
+                    </button>
+                    <button class="btn btn-info" onclick="importDataFromExcel('history')">
+                        📊 History.xlsx
+                    </button>
+                    <button class="btn btn-primary" onclick="importDataFromExcel('all')" style="grid-column: 1 / -1;">
+                        📊 Importer Tout Excel (Tous les fichiers)
+                    </button>
+                    <button class="btn btn-warning" onclick="importAllData()" style="grid-column: 1 / -1; margin-top: 10px;">
+                        ⚠️ Importer Tout Excel (Remplacer toutes les données)
+                    </button>
+                    <button class="btn btn-info" onclick="mergeDataFromFile()" style="grid-column: 1 / -1; margin-top: 10px;">
+                        🔄 Fusionner Excel (Depuis autre machine)
+                    </button>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 10px;">📊 Créer fichiers Excel d'exemple</h3>
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-success" onclick="createSampleExcelFiles()" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                        📊 Créer fichiers Excel d'exemple (avec données de test)
+                    </button>
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #666; padding: 10px; background: #f0f8ff; border-radius: 8px;">
+                        <strong>ℹ️ Instructions:</strong><br>
+                        Cliquez sur le bouton ci-dessus pour créer ملفات Excel تجريبية مع بيانات اختبار.<br>
+                        بعد التحميل، انسخ الملفات إلى مجلد <code>data</code> ثم استخدم "Import Excel" لتحميل البيانات.
+                    </p>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 10px;">💾 Sauvegarder dans les fichiers du projet</h3>
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-primary" onclick="saveAllDataToProjectFilesDirect()" style="width: 100%; padding: 15px; font-size: 1.1em; margin-bottom: 10px;">
+                        💾 Sauvegarder directement dans data/ (Chrome/Edge)
+                    </button>
+                    <button class="btn btn-secondary" onclick="saveAllDataToProjectFiles()" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                        📁 Télécharger tous les fichiers (Alternative)
+                    </button>
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #666; padding: 10px; background: #f0f8ff; border-radius: 8px;">
+                        <strong>ℹ️ Instructions:</strong><br>
+                        <strong>Option 1 (Recommandé):</strong> Utilisez "Sauvegarder directement" - choisissez le dossier <code>data</code> une fois, puis les fichiers seront sauvegardés automatiquement.<br>
+                        <strong>Option 2:</strong> Téléchargez les fichiers et copiez-les manuellement dans le dossier <code>data</code>.
+                    </p>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #2196F3;">
+                    <strong>💡 Partage entre deux machines (sans connexion):</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9em;">
+                        <strong>Option 1 - Fusionner (Recommandé):</strong> Utilisez "🔄 Fusionner les données" pour combiner les données des deux machines sans perdre aucune donnée.<br><br>
+                        <strong>Option 2 - Remplacer:</strong> Utilisez "⚠️ Importer Tout" pour remplacer toutes les données (faites un Export d'abord !).<br><br>
+                        <strong>💾 Méthode:</strong> Export depuis Machine 1 → Copiez le fichier (USB/Shared Folder) → Import/Fusion sur Machine 2
+                    </p>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <strong>⚠️ Attention:</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9em;">
+                        L'importation remplacera les données actuelles. Assurez-vous d'avoir fait une sauvegarde avant d'importer.<br>
+                        Pour éviter la perte de données, utilisez "Fusionner" au lieu de "Importer".
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

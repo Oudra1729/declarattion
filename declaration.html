@@ -1,0 +1,532 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enlèvement d'Explosifs & Accessoires</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .document-container {
+            max-width: 21cm;
+            margin: 0 auto;
+            background: white;
+            padding: 30px 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* Header with border */
+        .company-header {
+            border: 2px solid #000;
+            padding: 5px 10px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            align-items: center;
+        }
+
+        .company-name {
+            font-weight: bold;
+            font-size: 16px;
+            text-align: left;
+        }
+
+        .company-center {
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .company-details {
+            text-align: right;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        /* Title Section */
+        .title-section {
+            text-align: center;
+            border: 2px solid #000;
+            padding: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Document Number Section */
+        .doc-number-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 13px;
+        }
+
+        .doc-left {
+            text-align: left;
+        }
+
+        .doc-right {
+            text-align: right;
+        }
+
+        .doc-number {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        /* Subject Section with bullets */
+        .subject-section {
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .subject-line {
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        .subject-line::before {
+            content: '::';
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 16px;
+        }
+
+        .reference-line {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        /* Intro text */
+        .intro-text {
+            text-align: justify;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-indent: 40px;
+        }
+
+        /* Main content sections */
+        .info-section {
+            font-size: 13px;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            min-width: 150px;
+        }
+
+        .info-value {
+            display: inline;
+        }
+
+        /* Quantities section */
+        .quantities-block {
+            margin-left: 25px;
+            margin-top: 5px;
+        }
+
+        /* Personnel sections */
+        .personnel-block {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .personnel-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .personnel-details {
+            margin-left: 25px;
+            line-height: 1.7;
+        }
+
+        /* Footer */
+        .document-footer {
+            margin-top: 50px;
+            text-align: right;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Print button */
+        .no-print {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-print {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-back {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .company-logo {
+            width: 138px;
+            height: 57px;
+        }
+
+        @media print {
+            @page {
+                margin: 0;
+                size: A4;
+            }
+            
+            body {
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .document-container {
+                box-shadow: none;
+                padding: 20px;
+                max-width: 100%;
+                margin: 0;
+            }
+            
+            /* Hide browser headers and footers */
+            html {
+                margin: 0;
+                padding: 0;
+            }
+            
+            /* Prevent browser from showing title, date, URL in print */
+            body::before,
+            body::after {
+                display: none !important;
+            }
+        }
+        
+        /* Additional styles to prevent browser headers/footers */
+        @page {
+            margin: 0;
+            size: A4;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="btn btn-print" onclick="printDocument()">🖨️ Imprimer (Ctrl+P)</button>
+        <button class="btn btn-back" onclick="window.location.href='index.html'">← Retour au Formulaire</button>
+    </div>
+
+    <div class="document-container">
+        <!-- Header -->
+        <div class="company-header">
+            <!-- <div class="company-name">GROUPE CADEX</div> -->
+             <!-- logo SBO in the some folder of project mvp -->
+             <img src="logo.jpg" alt="SBO" class="company-logo">
+            <div class="company-center">USINE SIDI BOUAATMAN</div>
+            <div class="company-details">
+                <div>Réf : UC/EE/00</div>
+                <div>Date : <span id="headerDate"></span></div>
+                <div>Page : 1/1</div>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="title-section">
+            ENLEVEMENT D'EXPLOSIFS & ACCESSOIRES
+        </div>
+
+        <!-- Document Number and Date -->
+        <div class="doc-number-section">
+            <div class="doc-left">
+                <div class="doc-number">N° <span id="docNumber"></span></div>
+                <div hidden><span id="docMonthYear"></span></div>
+            </div>
+            <div class="doc-right">
+                <strong>DATE :</strong> <span id="docDate"></span>
+                <span id="docMonthYear2"></span>
+            </div>
+        </div>
+
+        <!-- Subject and Reference -->
+        <div class="subject-section">
+            <div class="subject-line">
+                <div>
+                    <strong>Objet</strong> : Enlèvement des explosifs et accessoires
+                </div>
+            </div>
+            
+            <div class="reference-line">
+                <strong>Référence</strong> : MESSAGES n°636/4 SPJ et 457/SPA Commandement de la Gendarmerie Royale du 26.06.1988.
+            </div>
+        </div>
+
+        <!-- Introduction -->
+        <div class="intro-text">
+            Nous avons l'honneur de vous communiquer les informations concernant un enlèvement d'explosifs et accessoires conformément aux directives citées en référence.
+        </div>
+
+        <!-- Main Information -->
+        <div class="info-section">
+            <span class="info-label">DATE DE DEPART :</span>
+            <span class="info-value" id="dateDepart"></span>
+        </div>
+
+        <div class="info-section">
+            <span class="info-label">DESTINATAIRE :</span>
+            <span class="info-value" id="destinataire"></span>
+        </div>
+
+        <div class="info-section">
+            <span class="info-label">QUANTITES :</span>
+            <span class="info-value" id="quantities"></span>
+        </div>
+
+        <div class="info-section">
+            <span class="info-label">ITINERAIRE :</span>
+            <span class="info-value" id="itineraire"></span>
+        </div>
+
+        <!-- Driver Section -->
+        <div class="info-section">
+            <div class="personnel-name">
+                CONDUCTEUR : <span id="driverName"></span>
+            </div>
+            <div class="personnel-details">
+                CAMION : Marque : <span id="vehicleModel"></span> - Numéro : <span id="vehicleMatricule"></span><br>
+                N° de C.I.N : <span id="driverCIN"></span> - N° de GSM : <span id="driverPhone"></span>
+            </div>
+        </div>
+
+        <!-- Escort Section -->
+        <div class="info-section">
+            <div class="info-section">
+                CONVOYEUR : <span id="convoyeurName"></span>
+            </div>
+            <div class="info-section">
+                N° Carte de Contrôle : <span id="convoyeurCard">-</span><br>
+                N° de C.I.N : <span id="convoyeurCIN"></span> - N° de GSM : <span id="convoyeurPhone"></span>
+            </div>
+        </div>
+
+        <!-- Passavant -->
+        <div class="info-section">
+            <span class="info-label">PASSAVANT N° :</span>
+            <span class="info-value" id="passavantNumber"></span>
+            Date de délivrance : <span id="passavantExpiry"></span>
+        </div>
+
+        <!-- Bon de Livraison -->
+        <div class="info-section">
+            <strong>BON DE LIVRAISON : <span id="bonLivraison"></span></strong>
+        </div>
+
+        <!-- Footer -->
+        <div class="document-footer">
+            CACHET & SIGNATURE DE LA SOCIETE
+        </div>
+    </div>
+
+    <script>
+        // Load data from localStorage
+        function loadDeclarationData() {
+            const data = localStorage.getItem('currentDeclaration');
+            if (!data) {
+                alert('Aucune donnée de déclaration trouvée. Veuillez générer une déclaration depuis le formulaire.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const declaration = JSON.parse(data);
+
+            // Format dates
+            const dateObj = new Date(declaration.date);
+            // Handle datetime-local format (YYYY-MM-DDTHH:mm)
+            let dateDepartObj;
+            if (declaration.dateDepart && declaration.dateDepart.includes('T')) {
+                dateDepartObj = new Date(declaration.dateDepart);
+            } else if (declaration.dateDepart) {
+                // Fallback for date-only format
+                dateDepartObj = new Date(declaration.dateDepart + 'T00:00');
+            } else {
+                dateDepartObj = new Date();
+            }
+            const passavantExpiryObj = new Date(declaration.passavantExpiry);
+
+            // Fill header date (current month/year)
+            document.getElementById('headerDate').textContent = formatMonthYear(dateObj);
+
+            // Fill document number
+            document.getElementById('docNumber').textContent = declaration.documentNumber || '';
+
+            // Fill month/year
+            const monthYear = formatMonthYear(dateObj);
+            document.getElementById('docMonthYear').textContent = monthYear;
+            document.getElementById('docMonthYear2').textContent = monthYear;
+
+            // Fill formatted date
+            document.getElementById('docDate').textContent = formatDayOfWeek(dateObj);
+
+            // Fill date de départ
+            document.getElementById('dateDepart').textContent = formatDateDepart(dateDepartObj);
+
+            // Fill destinataire (destination)
+            document.getElementById('destinataire').textContent = declaration.destination || '';
+
+            // Fill quantities
+            const quantitiesContent = document.getElementById('quantities');
+            if (declaration.products && declaration.products.length > 0) {
+                let quantitiesHtml = '';
+                declaration.products.forEach((product, index) => {
+                    const letter = String.fromCharCode(65 + index); // A, B, C, etc.
+                    quantitiesHtml += `${letter} : Explosifs : ${product.quantity} ${product.unit} ${product.name}.`;
+                    if (index < declaration.products.length - 1) {
+                        quantitiesHtml += '<br>';
+                    }
+                });
+                quantitiesContent.innerHTML = quantitiesHtml;
+            } else {
+                quantitiesContent.textContent = 'Aucun produit spécifié';
+            }
+
+            // Fill itinéraire
+            if (declaration.itineraire && declaration.itineraire.length > 0) {
+                document.getElementById('itineraire').textContent = declaration.itineraire.join(' – ');
+            } else {
+                document.getElementById('itineraire').textContent = 'Non spécifié';
+            }
+
+            // Fill driver info
+            document.getElementById('driverName').textContent = declaration.driverName || '';
+            document.getElementById('driverCIN').textContent = declaration.driverCIN || '';
+            document.getElementById('driverPhone').textContent = formatPhone(declaration.driverPhone) || '';
+            document.getElementById('vehicleMatricule').textContent = declaration.vehicleMatricule || '';
+            document.getElementById('vehicleModel').textContent = declaration.vehicleModel || '';
+
+            // Fill convoyeur info
+            document.getElementById('convoyeurName').textContent = declaration.convoyeurName || '';
+            document.getElementById('convoyeurCard').textContent = declaration.convoyeurCard || '-';
+            document.getElementById('convoyeurCIN').textContent = declaration.convoyeurCIN || '';
+            document.getElementById('convoyeurPhone').textContent = formatPhone(declaration.convoyeurPhone) || '';
+
+            // Fill passavant
+            document.getElementById('passavantNumber').textContent = declaration.passavantNumber || '';
+            document.getElementById('passavantExpiry').textContent = formatPassavantExpiry(passavantExpiryObj);
+
+            // Fill bon de livraison
+            document.getElementById('bonLivraison').textContent = declaration.bonLivraison || '';
+        }
+
+        function formatMonthYear(date) {
+            if (!date || isNaN(date.getTime())) return '';
+            const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 
+                          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+            return `${months[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        function formatDayOfWeek(date) {
+            if (!date || isNaN(date.getTime())) return '';
+            const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+            const dayName = days[date.getDay()];
+            const day = date.getDate();
+            return `${dayName} ${day}`;
+        }
+
+        function formatDateDepart(date) {
+            if (!date || isNaN(date.getTime())) return '';
+            const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 
+                          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            return `${day} ${month.toUpperCase()} ${year} à ${hours} H`;
+        }
+
+        function formatPassavantExpiry(date) {
+            if (!date || isNaN(date.getTime())) return '';
+            // The passavant expiry date from form is the end date
+            // Calculate start date as 30 days before the expiry date
+            const endDate = new Date(date);
+            const startDate = new Date(date);
+            startDate.setDate(startDate.getDate() - 30);
+            
+            const formatDate = (d) => {
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}/${month}/${year}`;
+            };
+            
+            return `${formatDate(startDate)} AU ${formatDate(endDate)}`;
+        }
+
+        function formatPhone(phone) {
+            if (!phone) return '';
+            // Format phone number: 0612345678 -> 06 12 34 56 78
+            const cleaned = phone.replace(/\D/g, '');
+            if (cleaned.length === 10) {
+                return `${cleaned.substring(0, 2)} ${cleaned.substring(2, 4)} ${cleaned.substring(4, 6)} ${cleaned.substring(6, 8)} ${cleaned.substring(8, 10)}`;
+            }
+            return phone;
+        }
+
+        // Print function with optimized settings
+        function printDocument() {
+            // Remove title temporarily to prevent it from showing in print headers
+            const originalTitle = document.title;
+            document.title = '';
+            
+            // Trigger print
+            window.print();
+            
+            // Restore title after print dialog closes
+            setTimeout(() => {
+                document.title = originalTitle;
+            }, 1000);
+        }
+        
+        // Also handle Ctrl+P
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                printDocument();
+            }
+        });
+
+        // Load data when page loads
+        window.addEventListener('DOMContentLoaded', loadDeclarationData);
+    </script>
+</body>
+</html>
