@@ -410,48 +410,54 @@ async function saveHistory(newDeclaration = null) {
     // Sort by timestamp (newest first) before saving
     history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
-    // Save to localStorage
+    // Save to localStorage (this always works, even if Excel save fails)
     localStorage.setItem('declarationHistory', JSON.stringify(history));
+    console.log('✅ History saved to localStorage:', history.length, 'declarations');
     
-    // If a new declaration is provided, append only that row to Excel
-    if (newDeclaration) {
-        // Prepare declaration for Excel (convert arrays/objects to strings)
-        const excelDeclaration = { ...newDeclaration };
-        // Convert itineraire array to comma-separated string
-        if (Array.isArray(excelDeclaration.itineraire)) {
-            excelDeclaration.itineraire = excelDeclaration.itineraire.join(', ');
-        }
-        // Convert products array to JSON string for Excel
-        if (Array.isArray(excelDeclaration.products)) {
-            excelDeclaration.products = JSON.stringify(excelDeclaration.products);
-        }
-        
-        // Try to append to Excel file first (preserves existing data)
-        const appended = await appendRowToExcelFile('history.xlsx', excelDeclaration);
-        if (!appended) {
-            console.warn('⚠️ Failed to append to history.xlsx, trying full save...');
-            // Fallback: Save all data if append failed
-            // But first prepare all history data for Excel
-            const excelHistory = history.map(decl => {
-                const excelDecl = { ...decl };
-                if (Array.isArray(excelDecl.itineraire)) {
-                    excelDecl.itineraire = excelDecl.itineraire.join(', ');
-                }
-                if (Array.isArray(excelDecl.products)) {
-                    excelDecl.products = JSON.stringify(excelDecl.products);
-                }
-                return excelDecl;
-            });
-            await saveToExcelFile('history.xlsx', excelHistory);
+    // Try to save to Excel file (optional - app works fine without it)
+    try {
+        // If a new declaration is provided, append only that row to Excel
+        if (newDeclaration) {
+            // Prepare declaration for Excel (convert arrays/objects to strings)
+            const excelDeclaration = { ...newDeclaration };
+            // Convert itineraire array to comma-separated string
+            if (Array.isArray(excelDeclaration.itineraire)) {
+                excelDeclaration.itineraire = excelDeclaration.itineraire.join(', ');
+            }
+            // Convert products array to JSON string for Excel
+            if (Array.isArray(excelDeclaration.products)) {
+                excelDeclaration.products = JSON.stringify(excelDeclaration.products);
+            }
+            
+            // Try to append to Excel file first (preserves existing data)
+            const appended = await appendRowToExcelFile('history.xlsx', excelDeclaration);
+            if (!appended) {
+                console.warn('⚠️ Failed to append to history.xlsx, trying full save...');
+                // Fallback: Save all data if append failed
+                // But first prepare all history data for Excel
+                const excelHistory = history.map(decl => {
+                    const excelDecl = { ...decl };
+                    if (Array.isArray(excelDecl.itineraire)) {
+                        excelDecl.itineraire = excelDecl.itineraire.join(', ');
+                    }
+                    if (Array.isArray(excelDecl.products)) {
+                        excelDecl.products = JSON.stringify(excelDecl.products);
+                    }
+                    return excelDecl;
+                });
+                await saveToExcelFile('history.xlsx', excelHistory);
+            } else {
+                console.log('✅ Declaration appended successfully to data/history.xlsx');
+            }
         } else {
-            console.log('✅ Declaration appended successfully to data/history.xlsx');
+            // No new declaration, save all data (for cases like import/merge)
+            await saveToExcelFile('history.xlsx', history);
         }
-    } else {
-        // No new declaration, save all data (for cases like import/merge)
-        await saveToExcelFile('history.xlsx', history);
+    } catch (excelError) {
+        // Excel save failed, but that's OK - data is in localStorage
+        console.warn('⚠️ Could not save to Excel file. Data is safely stored in localStorage.', excelError);
+        // Don't show error to user - the app works fine with localStorage only
     }
-    
-    console.log('History saved to localStorage and Excel file:', history.length, 'declarations');
 }
 
 // Get next document number (auto-increment)
@@ -514,7 +520,6 @@ function declarationToCSVRow(declaration) {
         declaration.dateDepart || '',
         declaration.clientName || '',
         declaration.destination || '',
-        declaration.antenne || '',
         itineraireStr,
         declaration.driverName || '',
         declaration.driverCIN || '',
@@ -548,7 +553,6 @@ function getCSVHeader() {
         'Date Départ',
         'Client',
         'Destination',
-        'Antenne',
         'Itinéraire',
         'Conducteur',
         'CIN Conducteur',
@@ -610,64 +614,311 @@ function downloadCSV() {
 }
 
 // Show history modal
-async function showHistory() {
-    const modal = document.getElementById('historyModal');
-    const historyContent = document.getElementById('historyContent');
-    
-    // Show loading message
-    historyContent.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Chargement...</p>';
-    modal.style.display = 'block';
-    
-    // Load and sort history
-    await loadHistory();
-    
-    if (history.length === 0) {
-        historyContent.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Aucune déclaration dans l\'historique.</p>';
-    } else {
-        // Sort by timestamp (newest first)
-        const sortedHistory = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+async function showHistory(page = 1, filterText = '') {
+    try {
+        const modal = document.getElementById('historyModal');
+        const historyContent = document.getElementById('historyContent');
         
-        historyContent.innerHTML = `
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th>N° Document</th>
-                        <th>Date</th>
-                        <th>Client</th>
-                        <th>Conducteur</th>
-                        <th>Convoyeur</th>
-                        <th>Produits</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${sortedHistory.map((decl, index) => {
-                        const productsStr = decl.products ? decl.products.map(p => `${p.name} (${p.quantity} ${p.unit})`).join(', ') : 'Aucun';
-                        const date = decl.date ? new Date(decl.date).toLocaleDateString('fr-FR') : 'N/A';
-                        return `
-                            <tr>
-                                <td><strong>${decl.documentNumber || 'N/A'}</strong></td>
-                                <td>${date}</td>
-                                <td>${decl.clientName || 'N/A'}</td>
-                                <td>${decl.driverName || 'N/A'}</td>
-                                <td>${decl.convoyeurName || 'N/A'}</td>
-                                <td>${productsStr}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-primary" onclick="viewDeclaration(${index})">👁️ Voir</button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteDeclaration(${index})">🗑️</button>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            </table>
-        `;
+        if (!modal || !historyContent) {
+            console.error('History modal elements not found');
+            return;
+        }
+        
+        // Update current page and filter
+        currentHistoryPage = page;
+        historyFilter = filterText !== undefined ? filterText : (historyFilter || '');
+        
+        // Store current input state to preserve it
+        const currentInput = document.getElementById('historyFilterInput');
+        const cursorPosition = currentInput ? currentInput.selectionStart : null;
+        
+        // Only show loading if it's the first load
+        if (!currentInput) {
+            historyContent.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Chargement...</p>';
+        }
+        modal.style.display = 'block';
+        
+        // Load and sort history
+        await loadHistory();
+        
+        // Ensure history is an array
+        if (!Array.isArray(history)) {
+            history = [];
+        }
+        
+        if (history.length === 0) {
+            historyContent.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Aucune déclaration dans l\'historique.</p>';
+        } else {
+            // Sort by timestamp (newest first) - this is the full sorted list
+            const fullSortedHistory = [...history].sort((a, b) => {
+                try {
+                    const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+                    const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+                    return dateB - dateA;
+                } catch (e) {
+                    return 0;
+                }
+            });
+            
+            // Apply filter if provided
+            let filteredHistory = fullSortedHistory;
+            if (historyFilter && historyFilter.trim() !== '') {
+                const filterLower = historyFilter.toLowerCase().trim();
+                filteredHistory = fullSortedHistory.filter(decl => {
+                    // Search in all fields
+                    const docNumber = (decl.documentNumber || '').toLowerCase();
+                    const date = decl.date ? new Date(decl.date).toLocaleDateString('fr-FR').toLowerCase() : '';
+                    const client = (decl.clientName || '').toLowerCase();
+                    const driver = (decl.driverName || '').toLowerCase();
+                    const convoyeur = (decl.convoyeurName || '').toLowerCase();
+                    const destination = (decl.destination || '').toLowerCase();
+                    const products = decl.products && Array.isArray(decl.products) 
+                        ? decl.products.map(p => `${p.name || ''} ${p.quantity || ''} ${p.unit || ''}`).join(' ').toLowerCase()
+                        : '';
+                    
+                    return docNumber.includes(filterLower) ||
+                           date.includes(filterLower) ||
+                           client.includes(filterLower) ||
+                           driver.includes(filterLower) ||
+                           convoyeur.includes(filterLower) ||
+                           destination.includes(filterLower) ||
+                           products.includes(filterLower);
+                });
+            }
+            
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredHistory.length / historyItemsPerPage);
+            const startIndex = (page - 1) * historyItemsPerPage;
+            const endIndex = startIndex + historyItemsPerPage;
+            const paginatedHistory = filteredHistory.slice(startIndex, endIndex);
+            
+            // Calculate the original index in fullSortedHistory for each item
+            const historyHTML = paginatedHistory.map((decl, localIndex) => {
+                try {
+                    // Find the original index in the full sorted history array (not filtered)
+                    const globalIndex = fullSortedHistory.findIndex(d => 
+                        (d.id && decl.id && d.id === decl.id) || 
+                        (d.timestamp === decl.timestamp && d.documentNumber === decl.documentNumber)
+                    );
+                    const safeIndex = globalIndex >= 0 ? globalIndex : startIndex + localIndex;
+                    const productsStr = decl.products && Array.isArray(decl.products) 
+                        ? decl.products.map(p => `${p.name || 'N/A'} (${p.quantity || '0'} ${p.unit || ''})`).join(', ') 
+                        : 'Aucun';
+                    let date = 'N/A';
+                    try {
+                        date = decl.date ? new Date(decl.date).toLocaleDateString('fr-FR') : 'N/A';
+                    } catch (e) {
+                        date = decl.date || 'N/A';
+                    }
+                    const rowClass = localIndex % 2 === 0 ? 'history-row-even' : 'history-row-odd';
+                    const declId = decl.id || decl.timestamp || globalIndex;
+                    return `
+                        <tr class="${rowClass}" data-declaration-id="${declId}">
+                            <td><strong>${decl.documentNumber || 'N/A'}</strong></td>
+                            <td>${date}</td>
+                            <td>${decl.clientName || 'N/A'}</td>
+                            <td>${decl.driverName || 'N/A'}</td>
+                            <td>${decl.convoyeurName || 'N/A'}</td>
+                            <td>${productsStr}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewDeclarationByIndex(${safeIndex})">👁️ Voir</button>
+                                <button class="btn btn-sm btn-success" onclick="editDeclarationByIndex(${safeIndex})">✏️ Modifier</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteDeclarationByIndex(${safeIndex})">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                } catch (e) {
+                    console.error('Error rendering history row:', e, decl);
+                    return '';
+                }
+            }).join('');
+            
+            // Pagination controls
+            let paginationHTML = '';
+            if (totalPages > 1) {
+                paginationHTML = `
+                    <div class="history-pagination">
+                        <button class="btn btn-sm btn-secondary" onclick="showHistory(${page - 1}, '${historyFilter.replace(/'/g, "\\'")}')" ${page === 1 ? 'disabled' : ''}>
+                            ← Précédent
+                        </button>
+                        <span class="history-page-info">
+                            Page ${page} sur ${totalPages} (${filteredHistory.length} déclaration${filteredHistory.length > 1 ? 's' : ''}${historyFilter ? ' filtrée' + (filteredHistory.length > 1 ? 's' : '') : ''})
+                        </span>
+                        <button class="btn btn-sm btn-secondary" onclick="showHistory(${page + 1}, '${historyFilter.replace(/'/g, "\\'")}')" ${page === totalPages ? 'disabled' : ''}>
+                            Suivant →
+                        </button>
+                    </div>
+                `;
+            } else if (filteredHistory.length > 0) {
+                paginationHTML = `
+                    <div class="history-pagination">
+                        <span class="history-page-info">
+                            ${filteredHistory.length} déclaration${filteredHistory.length > 1 ? 's' : ''}${historyFilter ? ' trouvée' + (filteredHistory.length > 1 ? 's' : '') : ''}
+                        </span>
+                    </div>
+                `;
+            }
+            
+            // Filter input - Professional design
+            const filterHTML = `
+                <div class="history-filter-container">
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                        <span style="font-size: 1.2em; color: #667eea;">🔍</span>
+                        <input 
+                            type="text" 
+                            id="historyFilterInput" 
+                            class="history-filter-input" 
+                            placeholder="Rechercher par N° Document, Date, Client, Conducteur, Convoyeur, Produits..." 
+                            value="${historyFilter.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
+                            oninput="filterHistory(this.value)"
+                            onkeydown="handleHistoryFilterKeydown(event)"
+                            autocomplete="off"
+                        >
+                    </div>
+                    ${historyFilter ? `
+                        <button class="btn btn-sm btn-secondary" onclick="clearHistoryFilter()" style="white-space: nowrap; padding: 10px 16px;">
+                            <span style="margin-right: 5px;">✖️</span>Effacer
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            
+            // Check if filter container already exists - if so, only update table and pagination
+            const existingFilterContainer = historyContent.querySelector('.history-filter-container');
+            const existingTableContainer = historyContent.querySelector('.history-list-container');
+            
+            if (existingFilterContainer && existingTableContainer) {
+                // Only update table body and pagination, preserve input
+                const tbody = existingTableContainer.querySelector('tbody');
+                if (tbody) {
+                    tbody.innerHTML = historyHTML || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">Aucune déclaration trouvée</td></tr>';
+                }
+                
+                // Update pagination
+                const existingPagination = historyContent.querySelector('.history-pagination');
+                if (existingPagination) {
+                    existingPagination.outerHTML = paginationHTML;
+                } else if (paginationHTML) {
+                    existingTableContainer.insertAdjacentHTML('afterend', paginationHTML);
+                }
+                
+                // Update filter input value without losing focus
+                const input = document.getElementById('historyFilterInput');
+                if (input && input.value !== historyFilter) {
+                    const cursorPos = input.selectionStart;
+                    input.value = historyFilter;
+                    setTimeout(() => {
+                        if (cursorPos <= input.value.length) {
+                            input.setSelectionRange(cursorPos, cursorPos);
+                        }
+                        input.focus();
+                    }, 0);
+                }
+                
+                // Update clear button visibility
+                const clearBtn = existingFilterContainer.querySelector('button[onclick="clearHistoryFilter()"]');
+                if (historyFilter && !clearBtn) {
+                    existingFilterContainer.insertAdjacentHTML('beforeend', `
+                        <button class="btn btn-sm btn-secondary" onclick="clearHistoryFilter()" style="white-space: nowrap; padding: 10px 16px;">
+                            <span style="margin-right: 5px;">✖️</span>Effacer
+                        </button>
+                    `);
+                } else if (!historyFilter && clearBtn) {
+                    clearBtn.remove();
+                }
+            } else {
+                // First time - create everything
+                historyContent.innerHTML = `
+                    ${filterHTML}
+                    <div class="history-list-container">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>N° Document</th>
+                                    <th>Date</th>
+                                    <th>Client</th>
+                                    <th>Conducteur</th>
+                                    <th>Convoyeur</th>
+                                    <th>Produits</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${historyHTML || '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">Aucune déclaration trouvée</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                    ${paginationHTML}
+                `;
+                
+                // Focus input after first render
+                setTimeout(() => {
+                    const input = document.getElementById('historyFilterInput');
+                    if (input) input.focus();
+                }, 1000);
+            }
+        }
+    } catch (error) {
+        console.error('Error showing history:', error);
+        const historyContent = document.getElementById('historyContent');
+        if (historyContent) {
+            historyContent.innerHTML = '<p style="text-align: center; color: #d32f2f; padding: 20px;">Erreur lors du chargement de l\'historique. Veuillez réessayer.</p>';
+        }
     }
 }
 
 // Close history modal
 function closeHistory() {
     document.getElementById('historyModal').style.display = 'none';
+    // Reset filter when closing
+    historyFilter = '';
+}
+
+// Filter history - instant filtering without delay, non-blocking
+function filterHistory(filterText) {
+    // Store cursor position before filtering (use window to survive DOM updates)
+    const input = document.getElementById('historyFilterInput');
+    if (input) {
+        window.historyFilterCursorPos = input.selectionStart;
+    }
+    
+    // Use requestAnimationFrame to avoid blocking the UI thread
+    if (window.filterAnimationFrame) {
+        cancelAnimationFrame(window.filterAnimationFrame);
+    }
+    window.filterAnimationFrame = requestAnimationFrame(() => {
+        showHistory(1, filterText); // Reset to page 1 when filtering
+    });
+}
+
+// Handle keyboard events in filter input
+function handleHistoryFilterKeydown(event) {
+    // Escape key to clear filter
+    if (event.key === 'Escape' || event.key === 'Esc') {
+        event.preventDefault();
+        event.stopPropagation();
+        clearHistoryFilter();
+        return false;
+    }
+    // Allow all other keys to work normally - don't block typing
+    return true;
+}
+
+// Clear history filter
+function clearHistoryFilter() {
+    historyFilter = '';
+    const input = document.getElementById('historyFilterInput');
+    if (input) {
+        input.value = '';
+    }
+    showHistory(1, '');
+    // Refocus the input after clearing
+    setTimeout(() => {
+        const newInput = document.getElementById('historyFilterInput');
+        if (newInput) {
+            newInput.focus();
+        }
+    }, 50);
 }
 
 // View specific declaration
@@ -681,6 +932,187 @@ async function viewDeclaration(index) {
     }
 }
 
+// View declaration by index (wrapper to ensure history is loaded)
+async function viewDeclarationByIndex(index) {
+    await loadHistory();
+    await viewDeclaration(index);
+}
+
+// Edit declaration - load into form
+async function editDeclaration(index) {
+    await loadHistory();
+    const sortedHistory = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    if (!sortedHistory[index]) {
+        alert('Déclaration non trouvée.');
+        return;
+    }
+    
+    const declaration = sortedHistory[index];
+    
+    // Store the declaration ID for update tracking
+    localStorage.setItem('editingDeclarationId', declaration.id);
+    
+    // Close history modal
+    closeHistory();
+    
+    // Wait a bit for modal to close
+    setTimeout(() => {
+        populateFormFromDeclaration(declaration);
+        
+        // Reset to step 1
+        currentStep = 1;
+        updateStepDisplay();
+        
+        // Scroll to top of form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 300);
+}
+
+// Edit declaration by index (wrapper to ensure history is loaded)
+async function editDeclarationByIndex(index) {
+    await loadHistory();
+    await editDeclaration(index);
+}
+
+// Populate form with declaration data
+function populateFormFromDeclaration(declaration) {
+    // Step 1: Client
+    if (declaration.clientId) {
+        document.getElementById('clientSelect').value = declaration.clientId;
+        // Trigger change event to auto-fill related fields
+        document.getElementById('clientSelect').dispatchEvent(new Event('change'));
+    }
+    if (declaration.destination) {
+        document.getElementById('destination').value = declaration.destination;
+    }
+    
+    // Step 2: Driver
+    if (declaration.driverId) {
+        document.getElementById('driverSelect').value = declaration.driverId;
+        document.getElementById('driverSelect').dispatchEvent(new Event('change'));
+    }
+    if (declaration.driverCIN) {
+        document.getElementById('driverCIN').value = declaration.driverCIN;
+    }
+    if (declaration.driverPhone) {
+        document.getElementById('driverPhone').value = declaration.driverPhone;
+    }
+    if (declaration.vehicleMatricule) {
+        document.getElementById('vehicleMatricule').value = declaration.vehicleMatricule;
+    }
+    if (declaration.vehicleModel) {
+        document.getElementById('vehicleModel').value = declaration.vehicleModel;
+    }
+    
+    // Step 3: Convoyeur
+    if (declaration.convoyeurId) {
+        document.getElementById('convoyeurSelect').value = declaration.convoyeurId;
+        document.getElementById('convoyeurSelect').dispatchEvent(new Event('change'));
+    }
+    if (declaration.convoyeurCard) {
+        document.getElementById('convoyeurCard').value = declaration.convoyeurCard;
+    }
+    if (declaration.convoyeurCIN) {
+        document.getElementById('convoyeurCIN').value = declaration.convoyeurCIN;
+    }
+    if (declaration.convoyeurPhone) {
+        document.getElementById('convoyeurPhone').value = declaration.convoyeurPhone;
+    }
+    
+    // Step 4: Declaration details
+    if (declaration.documentNumber) {
+        document.getElementById('documentNumber').value = declaration.documentNumber;
+    }
+    if (declaration.date) {
+        document.getElementById('date').value = declaration.date;
+    }
+    if (declaration.dateDepart) {
+        // Handle datetime-local format
+        let dateDepartValue = declaration.dateDepart;
+        if (!dateDepartValue.includes('T')) {
+            // If it's just a date, add time
+            dateDepartValue = dateDepartValue + 'T00:00';
+        }
+        document.getElementById('dateDepart').value = dateDepartValue;
+    }
+    
+    // Products
+    const productsContainer = document.getElementById('productsContainer');
+    // Clear existing products (keep first row)
+    const existingRows = productsContainer.querySelectorAll('.product-row');
+    existingRows.forEach((row, idx) => {
+        if (idx > 0) {
+            row.remove();
+        } else {
+            // Clear first row
+            row.querySelector('.product-select').value = '';
+            row.querySelector('.product-quantity').value = '';
+            row.querySelector('.product-unit').value = '';
+        }
+    });
+    
+    // Add products from declaration
+    if (declaration.products && declaration.products.length > 0) {
+        // Ensure product selects are populated
+        populateProductSelects();
+        
+        declaration.products.forEach((product, index) => {
+            let productRow;
+            if (index === 0) {
+                // Use first row
+                productRow = productsContainer.querySelector('.product-row');
+            } else {
+                // Add new row
+                addProduct();
+                productRow = productsContainer.querySelectorAll('.product-row')[index];
+            }
+            
+            // Find product by name
+            const productSelect = productRow.querySelector('.product-select');
+            
+            // Try to find product by exact name match first
+            const matchingProduct = products.find(p => p.name === product.name);
+            if (matchingProduct) {
+                productSelect.value = matchingProduct.id;
+                productSelect.dispatchEvent(new Event('change'));
+            } else {
+                // Try to find by partial match in options
+                const productOption = Array.from(productSelect.options).find(opt => 
+                    opt.textContent === product.name || opt.textContent.includes(product.name)
+                );
+                if (productOption && productOption.value) {
+                    productSelect.value = productOption.value;
+                    productSelect.dispatchEvent(new Event('change'));
+                }
+            }
+            
+            // Set quantity and unit (override auto-filled unit if needed)
+            productRow.querySelector('.product-quantity').value = product.quantity || '';
+            if (product.unit) {
+                productRow.querySelector('.product-unit').value = product.unit;
+            }
+        });
+        
+        // Make selects searchable
+        setTimeout(() => {
+            document.querySelectorAll('.product-select').forEach(select => {
+                makeSelectSearchable(select.id || null, select);
+            });
+        }, 100);
+    }
+    
+    if (declaration.passavantNumber) {
+        document.getElementById('passavantNumber').value = declaration.passavantNumber;
+    }
+    if (declaration.passavantExpiry) {
+        document.getElementById('passavantExpiry').value = declaration.passavantExpiry;
+    }
+    if (declaration.bonLivraison) {
+        document.getElementById('bonLivraison').value = declaration.bonLivraison;
+    }
+}
+
 // Delete declaration
 async function deleteDeclaration(index) {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette déclaration ?')) {
@@ -689,8 +1121,14 @@ async function deleteDeclaration(index) {
         sortedHistory.splice(index, 1);
         history = sortedHistory;
         await saveHistory(); // Save to both localStorage and JSON file
-        await showHistory(); // Refresh the display
+        await showHistory(1); // Refresh the display (reset to page 1)
     }
+}
+
+// Delete declaration by index (wrapper to ensure history is loaded)
+async function deleteDeclarationByIndex(index) {
+    await loadHistory();
+    await deleteDeclaration(index);
 }
 
 // Load history from file manually (using file input) - Excel only
@@ -734,7 +1172,7 @@ async function loadHistoryFromFile() {
             // Also save to Excel file
             await saveToExcelFile('history.xlsx', history);
             
-            await showHistory(); // Refresh the display
+            await showHistory(1); // Refresh the display (reset to page 1)
             alert(`Historique chargé avec succès ! ${history.length} déclaration(s) trouvée(s).`);
         } catch (error) {
             console.error('Error loading history file:', error);
@@ -848,7 +1286,6 @@ function setupEventListeners() {
         const client = clients.find(c => c.id === clientId);
         if (client) {
             document.getElementById('destination').value = client.destination || '';
-            document.getElementById('antenne').value = client.antenne || '';
             
             // Display itinéraire
             const itineraireBox = document.getElementById('itineraireBox');
@@ -914,7 +1351,6 @@ function setupEventListeners() {
 // Clear client fields
 function clearClientFields() {
     document.getElementById('destination').value = '';
-    document.getElementById('antenne').value = '';
     const itineraireBox = document.getElementById('itineraireBox');
     itineraireBox.innerHTML = '';
     itineraireBox.classList.add('empty');
@@ -1148,10 +1584,16 @@ async function saveToExcelFile(filename, data) {
             }
         }
         
-        // Fallback: Download the file
-        XLSX.writeFile(workbook, filename);
-        console.log(`✅ تم تنزيل الملف: ${filename}\n💡 انسخه إلى مجلد data/ في مشروعك`);
-        return true;
+        // Fallback: Try to download the file (only if user interaction is allowed)
+        try {
+            XLSX.writeFile(workbook, filename);
+            console.log(`✅ تم تنزيل الملف: ${filename}\n💡 انسخه إلى مجلد data/ في مشروعك`);
+            return true;
+        } catch (downloadError) {
+            console.warn(`⚠️ Could not download ${filename}. Data is saved in localStorage.`, downloadError);
+            // Data is still saved in localStorage, so the app continues to work
+            return false;
+        }
     } catch (error) {
         console.error(`Error saving Excel file ${filename}:`, error);
         return false;
@@ -1330,11 +1772,10 @@ function getNextProductId() {
 async function saveNewClient() {
     const name = document.getElementById('addClientName').value.trim();
     const destination = document.getElementById('addClientDestination').value.trim();
-    const antenne = document.getElementById('addClientAntenne').value.trim();
     const itineraireStr = document.getElementById('addClientItineraire').value.trim();
 
-    if (!name || !destination || !antenne) {
-        alert('Veuillez remplir les champs Nom, Destination et Antenne.');
+    if (!name || !destination) {
+        alert('Veuillez remplir les champs Nom et Destination.');
         return;
     }
 
@@ -1343,7 +1784,6 @@ async function saveNewClient() {
         id: getNextClientId(),
         name,
         destination,
-        antenne,
         itineraire
     };
 
@@ -1369,7 +1809,6 @@ async function saveNewClient() {
     // Clear modal inputs
     document.getElementById('addClientName').value = '';
     document.getElementById('addClientDestination').value = '';
-    document.getElementById('addClientAntenne').value = '';
     document.getElementById('addClientItineraire').value = '';
 
     closeAddClientModal();
@@ -1660,6 +2099,11 @@ function removeProduct(button) {
 let currentStep = 1;
 const totalSteps = 5;
 
+// History pagination
+let currentHistoryPage = 1;
+const historyItemsPerPage = 5;
+let historyFilter = '';
+
 function updateStepDisplay() {
     // Update form sections
     document.querySelectorAll('.form-section').forEach((section, index) => {
@@ -1758,8 +2202,7 @@ function generateSummary() {
     summaryContent.innerHTML = `
         <div class="summary-item">
             <strong>Client:</strong> ${client ? client.name : 'N/A'}<br>
-            <strong>Destination:</strong> ${document.getElementById('destination').value || 'N/A'}<br>
-            <strong>Antenne:</strong> ${document.getElementById('antenne').value || 'N/A'}
+            <strong>Destination:</strong> ${document.getElementById('destination').value || 'N/A'}
         </div>
         <div class="summary-item">
             <strong>Conducteur:</strong> ${driver ? driver.name : 'N/A'}<br>
@@ -1823,17 +2266,26 @@ async function generateDeclaration() {
         docNumber = getNextDocumentNumber();
     }
 
+    // Check if we're editing an existing declaration
+    const editingId = localStorage.getItem('editingDeclarationId');
+    let isEditing = false;
+    let existingDeclarationIndex = -1;
+    
+    if (editingId) {
+        existingDeclarationIndex = history.findIndex(d => d.id == editingId || d.id === parseInt(editingId));
+        isEditing = existingDeclarationIndex !== -1;
+    }
+
     // Create declaration object
     const declaration = {
-        id: Date.now(), // Unique ID based on timestamp
-        timestamp: new Date().toISOString(),
+        id: isEditing ? history[existingDeclarationIndex].id : Date.now(), // Keep original ID if editing
+        timestamp: isEditing ? history[existingDeclarationIndex].timestamp : new Date().toISOString(), // Keep original timestamp if editing
         documentNumber: docNumber,
         date: document.getElementById('date').value,
         dateDepart: document.getElementById('dateDepart').value,
         clientId: clientId,
         clientName: client ? client.name : '',
         destination: document.getElementById('destination').value,
-        antenne: document.getElementById('antenne').value,
         itineraire: client ? client.itineraire : [],
         driverId: driverId,
         driverName: driver ? driver.name : '',
@@ -1852,8 +2304,15 @@ async function generateDeclaration() {
         bonLivraison: document.getElementById('bonLivraison').value
     };
 
-    // Add new declaration to history
-    history.push(declaration);
+    if (isEditing) {
+        // Update existing declaration
+        history[existingDeclarationIndex] = declaration;
+        // Remove editing flag
+        localStorage.removeItem('editingDeclarationId');
+    } else {
+        // Add new declaration to history
+        history.push(declaration);
+    }
     
     // Ensure dataDirectoryHandle is set before saving
     if (!dataDirectoryHandle && 'showDirectoryPicker' in window) {
@@ -1888,9 +2347,16 @@ async function generateDeclaration() {
         }
     }
     
-    // Save to both localStorage and Excel file (append new declaration only)
-    await saveHistory(declaration);
-    console.log('✅ New declaration saved to history.xlsx');
+    // Save to both localStorage and Excel file
+    if (isEditing) {
+        // For updates, save all history (since we're modifying an existing entry)
+        await saveHistory();
+        console.log('✅ Declaration updated in history.xlsx');
+    } else {
+        // For new declarations, append only
+        await saveHistory(declaration);
+        console.log('✅ New declaration saved to history.xlsx');
+    }
 
     // Save current declaration to localStorage for declaration.html
     localStorage.setItem('currentDeclaration', JSON.stringify(declaration));
@@ -2406,9 +2872,9 @@ function createSampleExcelFiles() {
 
     // Sample data
     const sampleClients = [
-        { id: 1, name: "SFI", destination: "SFI Depot", antenne: "Antenne 1", itineraire: "Point A, Point B, Point C" },
-        { id: 2, name: "Client B", destination: "Warehouse B", antenne: "Antenne 2", itineraire: "Point D, Point E, Point F" },
-        { id: 3, name: "Client Test", destination: "Test Destination", antenne: "Test Antenne", itineraire: "Start, Middle, End" }
+        { id: 1, name: "SFI", destination: "SFI Depot", itineraire: "Point A, Point B, Point C" },
+        { id: 2, name: "Client B", destination: "Warehouse B", itineraire: "Point D, Point E, Point F" },
+        { id: 3, name: "Client Test", destination: "Test Destination", itineraire: "Start, Middle, End" }
     ];
 
     const sampleDrivers = [

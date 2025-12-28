@@ -112,50 +112,29 @@
 
         /* Intro text */
         .intro-text {
-            text-align: justify;
-            font-size: 13px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-            text-indent: 40px;
-        }
-
-        /* Main content sections */
-        .info-section {
+            text-align: left;
             font-size: 13px;
             line-height: 1.8;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            text-indent: 0;
+            padding: 0;
         }
 
-        .info-label {
-            font-weight: bold;
-            display: inline-block;
-            min-width: 150px;
-        }
-
-        .info-value {
-            display: inline;
-        }
-
-        /* Quantities section */
-        .quantities-block {
-            margin-left: 25px;
-            margin-top: 5px;
-        }
-
-        /* Personnel sections */
-        .personnel-block {
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-
-        .personnel-name {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .personnel-details {
-            margin-left: 25px;
+        /* Main content sections - with horizontal lines */
+        .info-section {
+            font-size: 13px;
             line-height: 1.7;
+            margin-bottom: 0;
+            border-bottom: 1px solid #000;
+            padding: 8px 0;
+        }
+
+        .info-section:last-of-type {
+            border-bottom: none;
+        }
+
+        .no-border {
+            border-bottom: none !important;
         }
 
         /* Footer */
@@ -222,20 +201,17 @@
                 margin: 0;
             }
             
-            /* Hide browser headers and footers */
             html {
                 margin: 0;
                 padding: 0;
             }
             
-            /* Prevent browser from showing title, date, URL in print */
             body::before,
             body::after {
                 display: none !important;
             }
         }
         
-        /* Additional styles to prevent browser headers/footers */
         @page {
             margin: 0;
             size: A4;
@@ -251,8 +227,6 @@
     <div class="document-container">
         <!-- Header -->
         <div class="company-header">
-            <!-- <div class="company-name">GROUPE CADEX</div> -->
-             <!-- logo SBO in the some folder of project mvp -->
              <img src="logo.jpg" alt="SBO" class="company-logo">
             <div class="company-center">USINE SIDI BOUAATMAN</div>
             <div class="company-details">
@@ -299,56 +273,42 @@
 
         <!-- Main Information -->
         <div class="info-section">
-            <span class="info-label">DATE DE DEPART :</span>
-            <span class="info-value" id="dateDepart"></span>
+            <strong>DATE DE DEPART :</strong> <span id="dateDepart"></span>
         </div>
 
         <div class="info-section">
-            <span class="info-label">DESTINATAIRE :</span>
-            <span class="info-value" id="destinataire"></span>
+            <strong>DESTINATAIRE :</strong> <span id="destinataire"></span>
         </div>
 
         <div class="info-section">
-            <span class="info-label">QUANTITES :</span>
-            <span class="info-value" id="quantities"></span>
+            <strong>QUANTITE :</strong> <span id="quantities"></span>
         </div>
 
         <div class="info-section">
-            <span class="info-label">ITINERAIRE :</span>
-            <span class="info-value" id="itineraire"></span>
+            <strong>ITINERAIRE :</strong> <span id="itineraire"></span>
         </div>
 
         <!-- Driver Section -->
         <div class="info-section">
-            <div class="personnel-name">
-                CONDUCTEUR : <span id="driverName"></span>
-            </div>
-            <div class="personnel-details">
-                CAMION : Marque : <span id="vehicleModel"></span> - Numéro : <span id="vehicleMatricule"></span><br>
-                N° de C.I.N : <span id="driverCIN"></span> - N° de GSM : <span id="driverPhone"></span>
-            </div>
+            <strong>CHAUFFEUR :</strong> <span id="driverName"></span><br>
+            <strong>VEHICULE :</strong> <strong>SCANIA :</strong> MAT : <span id="vehicleMatricule"></span><br>
+            CIN : <span id="driverCIN"></span> - TEL : <span id="driverPhone"></span>
         </div>
 
         <!-- Escort Section -->
         <div class="info-section">
-            <div class="info-section">
-                CONVOYEUR : <span id="convoyeurName"></span>
-            </div>
-            <div class="info-section">
-                N° Carte de Contrôle : <span id="convoyeurCard">-</span><br>
-                N° de C.I.N : <span id="convoyeurCIN"></span> - N° de GSM : <span id="convoyeurPhone"></span>
-            </div>
+            <strong>CONVOYEUR :</strong> <span id="convoyeurName"></span><br>
+            CCE : <span id="convoyeurCard">-</span><br>
+            CIN : <span id="convoyeurCIN"></span> - Tel : <span id="convoyeurPhone"></span>
         </div>
 
         <!-- Passavant -->
         <div class="info-section">
-            <span class="info-label">PASSAVANT N° :</span>
-            <span class="info-value" id="passavantNumber"></span>
-            Date de délivrance : <span id="passavantExpiry"></span>
+            <strong>PASSAVANTS : N° <span id="passavantNumber"></span></strong> du <span id="passavantExpiry"></span>
         </div>
 
         <!-- Bon de Livraison -->
-        <div class="info-section">
+        <div class="info-section no-border">
             <strong>BON DE LIVRAISON : <span id="bonLivraison"></span></strong>
         </div>
 
@@ -372,19 +332,17 @@
 
             // Format dates
             const dateObj = new Date(declaration.date);
-            // Handle datetime-local format (YYYY-MM-DDTHH:mm)
             let dateDepartObj;
             if (declaration.dateDepart && declaration.dateDepart.includes('T')) {
                 dateDepartObj = new Date(declaration.dateDepart);
             } else if (declaration.dateDepart) {
-                // Fallback for date-only format
                 dateDepartObj = new Date(declaration.dateDepart + 'T00:00');
             } else {
                 dateDepartObj = new Date();
             }
             const passavantExpiryObj = new Date(declaration.passavantExpiry);
 
-            // Fill header date (current month/year)
+            // Fill header date
             document.getElementById('headerDate').textContent = formatMonthYear(dateObj);
 
             // Fill document number
@@ -401,7 +359,7 @@
             // Fill date de départ
             document.getElementById('dateDepart').textContent = formatDateDepart(dateDepartObj);
 
-            // Fill destinataire (destination)
+            // Fill destinataire
             document.getElementById('destinataire').textContent = declaration.destination || '';
 
             // Fill quantities
@@ -409,8 +367,10 @@
             if (declaration.products && declaration.products.length > 0) {
                 let quantitiesHtml = '';
                 declaration.products.forEach((product, index) => {
-                    const letter = String.fromCharCode(65 + index); // A, B, C, etc.
-                    quantitiesHtml += `${letter} : Explosifs : ${product.quantity} ${product.unit} ${product.name}.`;
+                    const quantity = product.quantity || '0';
+                    const unit = product.unit || '';
+                    const name = product.name || '';
+                    quantitiesHtml += `${quantity} ${unit} ${name}`;
                     if (index < declaration.products.length - 1) {
                         quantitiesHtml += '<br>';
                     }
@@ -422,7 +382,7 @@
 
             // Fill itinéraire
             if (declaration.itineraire && declaration.itineraire.length > 0) {
-                document.getElementById('itineraire').textContent = declaration.itineraire.join(' – ');
+                document.getElementById('itineraire').textContent = declaration.itineraire.join(' / ');
             } else {
                 document.getElementById('itineraire').textContent = 'Non spécifié';
             }
@@ -430,15 +390,14 @@
             // Fill driver info
             document.getElementById('driverName').textContent = declaration.driverName || '';
             document.getElementById('driverCIN').textContent = declaration.driverCIN || '';
-            document.getElementById('driverPhone').textContent = formatPhone(declaration.driverPhone) || '';
+            document.getElementById('driverPhone').textContent = declaration.driverPhone || '';
             document.getElementById('vehicleMatricule').textContent = declaration.vehicleMatricule || '';
-            document.getElementById('vehicleModel').textContent = declaration.vehicleModel || '';
 
             // Fill convoyeur info
             document.getElementById('convoyeurName').textContent = declaration.convoyeurName || '';
             document.getElementById('convoyeurCard').textContent = declaration.convoyeurCard || '-';
             document.getElementById('convoyeurCIN').textContent = declaration.convoyeurCIN || '';
-            document.getElementById('convoyeurPhone').textContent = formatPhone(declaration.convoyeurPhone) || '';
+            document.getElementById('convoyeurPhone').textContent = declaration.convoyeurPhone || '';
 
             // Fill passavant
             document.getElementById('passavantNumber').textContent = declaration.passavantNumber || '';
@@ -471,13 +430,11 @@
             const month = months[date.getMonth()];
             const year = date.getFullYear();
             const hours = String(date.getHours()).padStart(2, '0');
-            return `${day} ${month.toUpperCase()} ${year} à ${hours} H`;
+            return `${day} ${month.toUpperCase()} ${year} à ${hours} H du matin`;
         }
 
         function formatPassavantExpiry(date) {
             if (!date || isNaN(date.getTime())) return '';
-            // The passavant expiry date from form is the end date
-            // Calculate start date as 30 days before the expiry date
             const endDate = new Date(date);
             const startDate = new Date(date);
             startDate.setDate(startDate.getDate() - 30);
@@ -492,32 +449,15 @@
             return `${formatDate(startDate)} AU ${formatDate(endDate)}`;
         }
 
-        function formatPhone(phone) {
-            if (!phone) return '';
-            // Format phone number: 0612345678 -> 06 12 34 56 78
-            const cleaned = phone.replace(/\D/g, '');
-            if (cleaned.length === 10) {
-                return `${cleaned.substring(0, 2)} ${cleaned.substring(2, 4)} ${cleaned.substring(4, 6)} ${cleaned.substring(6, 8)} ${cleaned.substring(8, 10)}`;
-            }
-            return phone;
-        }
-
-        // Print function with optimized settings
         function printDocument() {
-            // Remove title temporarily to prevent it from showing in print headers
             const originalTitle = document.title;
             document.title = '';
-            
-            // Trigger print
             window.print();
-            
-            // Restore title after print dialog closes
             setTimeout(() => {
                 document.title = originalTitle;
             }, 1000);
         }
         
-        // Also handle Ctrl+P
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
                 e.preventDefault();
@@ -525,7 +465,6 @@
             }
         });
 
-        // Load data when page loads
         window.addEventListener('DOMContentLoaded', loadDeclarationData);
     </script>
 </body>

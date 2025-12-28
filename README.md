@@ -10,7 +10,7 @@ Cette application web permet de gérer et générer des déclarations de transpo
 
 L'application gère quatre types de données principales :
 
-- **Clients** : Informations sur les clients (nom, destination, antenne, itinéraire)
+- **Clients** : Informations sur les clients (nom, destination, itinéraire)
 - **Conducteurs** : Informations sur les conducteurs et leurs véhicules (nom, CIN, téléphone, matricule, modèle)
 - **Convoyeurs** : Informations sur les convoyeurs (nom, CIN, téléphone, CCE)
 - **Produits** : Liste des produits transportables (nom, unité de mesure)
@@ -19,7 +19,7 @@ L'application gère quatre types de données principales :
 
 L'application permet de créer des déclarations de transport complètes incluant :
 
-- Informations client (destination, antenne, itinéraire)
+- Informations client (destination, itinéraire)
 - Informations conducteur et véhicule
 - Informations convoyeur
 - Liste des produits transportés avec quantités
