@@ -314,7 +314,7 @@
         <!-- Header -->
         <div class="company-header">
              <img src="logo.jpg" alt="SBO" class="company-logo">
-            <div class="company-center">USINE SIDI BOUATMANE</div>
+            <div class="company-center">USINE SIDI BOUATHMANE</div>
             <div class="company-details">
                 <div>Réf : UC/EE-02/00/A</div>
                 <div>Date : FEVRIER 2000<span id="headerDate" hidden></span></div>
@@ -531,17 +531,23 @@
             }       
         }
 
+        function capitalizeFirst(str) {
+            if (!str) return '';
+            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        }
+
         function formatMonthYear(date) {
             if (!date || isNaN(date.getTime())) return '';
             const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 
                           'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-            return `${months[date.getMonth()]} ${date.getFullYear()}`;
+            const month = capitalizeFirst(months[date.getMonth()]);
+            return `${month} ${date.getFullYear()}`;
         }
 
         function formatDayOfWeek(date) {
             if (!date || isNaN(date.getTime())) return '';
             const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-            const dayName = days[date.getDay()];
+            const dayName = capitalizeFirst(days[date.getDay()]);
             const day = date.getDate();
             return `${dayName} ${day}`;
         }
@@ -551,9 +557,9 @@
             const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 
                           'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
             const day = date.getDate();
-            const month = months[date.getMonth()];
+            const month = capitalizeFirst(months[date.getMonth()]);
             const year = date.getFullYear();
-            return `${day} ${month.toUpperCase()} ${year}`;
+            return `${day} ${month} ${year}`;
         }
 
         function formatTimeOnly(date) {
