@@ -23,6 +23,13 @@
             background: white;
             padding: 30px 40px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .document-content {
+            flex: 1;
         }
 
         /* Header with border */
@@ -137,13 +144,36 @@
             border-bottom: none !important;
         }
 
+        /* Quantities section */
+        .quantities-container {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .quantities-label {
+            min-width: 180px;
+            flex-shrink: 0;
+        }
+
+        .quantities-content {
+            flex: 1;
+            min-width: 400px;
+            margin-left: -80px;
+        }
+
+        .quantities-item {
+            line-height: 1.7;
+        }
+
         /* Footer */
         .document-footer {
-            margin-top: 50px;
+            margin-top: auto;
+            padding-top: 50px;
             text-align: right;
             font-size: 12px;
             font-weight: bold;
         }
+
 
         /* Print button */
         .no-print {
@@ -196,9 +226,19 @@
             
             .document-container {
                 box-shadow: none;
-                padding: 20px;
+                padding: 20px 40px;
                 max-width: 100%;
                 margin: 0;
+                min-height: 100vh;
+                page-break-inside: avoid;
+            }
+            
+            .document-footer {
+                position: fixed;
+                bottom: 80px;
+                right: 40px;
+                margin-top: 0;
+                padding-top: 0;
             }
             
             html {
@@ -225,6 +265,7 @@
     </div>
 
     <div class="document-container">
+        <div class="document-content">
         <!-- Header -->
         <div class="company-header">
              <img src="logo.jpg" alt="SBO" class="company-logo">
@@ -279,7 +320,10 @@
         </div>
 
         <div class="info-section">
-            <strong>QUANTITE :</strong> <span id="quantities" style="margin-left: 25px; display: inline-block; width: 400px;"></span>
+            <div class="quantities-container">
+                <strong class="quantities-label">QUANTITE :</strong>
+                <div id="quantities" class="quantities-content"></div>
+            </div>
         </div>
 
         <div class="info-section">
@@ -309,6 +353,7 @@
         <!-- if bon de livraison is not empty, display it with label   -->
         <div class="info-section no-border" id="bonLivraisonSection" style="display: none;">
             <strong>BON DE LIVRAISON : <span id="bonLivraison"></span></strong>
+        </div>
         </div>
 
         <!-- Footer -->
@@ -368,14 +413,11 @@
             const quantitiesContent = document.getElementById('quantities');
             if (declaration.products && declaration.products.length > 0) {
                 let quantitiesHtml = '';
-                declaration.products.forEach((product, index) => {
+                declaration.products.forEach((product) => {
                     const quantity = product.quantity || '0';
                     const unit = product.unit || '';
                     const name = product.name || '';
-                    quantitiesHtml += `${quantity} ${unit} ${name}`;
-                    if (index < declaration.products.length - 1) {
-                        quantitiesHtml += '<br>';
-                    }
+                    quantitiesHtml += `<div class="quantities-item">${quantity} ${unit} ${name}</div>`;
                 });
                 quantitiesContent.innerHTML = quantitiesHtml;
             } else {
