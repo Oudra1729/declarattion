@@ -518,7 +518,24 @@ function initializeDocumentNumber() {
 
 // Convert declaration to CSV row
 function declarationToCSVRow(declaration) {
-    const productsStr = declaration.products ? declaration.products.map(p => `${p.name} (${p.quantity} ${p.unit})`).join('; ') : '';
+    // Handle products field safely: it can be an array (new format) or a string (old data)
+    let productsStr = '';
+    if (Array.isArray(declaration.products)) {
+        productsStr = declaration.products
+            .map(p => {
+                if (!p) return '';
+                const name = p.name || '';
+                const quantity = p.quantity != null ? p.quantity : '';
+                const unit = p.unit || '';
+                return `${name} (${quantity} ${unit})`.trim();
+            })
+            .filter(s => s && s !== '()')
+            .join('; ');
+    } else if (typeof declaration.products === 'string') {
+        // Backward compatibility for old history entries where products was stored as plain text
+        productsStr = declaration.products;
+    }
+
     const itineraireStr = Array.isArray(declaration.itineraire) ? declaration.itineraire.join(' - ') : '';
     
     return [
@@ -604,20 +621,39 @@ function generateCSVFromHistory() {
 
 // Download CSV file from history
 function downloadCSV() {
-    const csvData = generateCSVFromHistory();
-    
-    // Create blob and download
-    const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `declarations_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+        const csvData = generateCSVFromHistory();
+        
+        // Check if there's any data (more than just header)
+        if (!csvData || csvData.trim().split('\n').length <= 1) {
+            alert('⚠️ Aucune déclaration dans l\'historique.\n\nVeuillez d\'abord créer des déclarations avant de télécharger le CSV.');
+            return;
+        }
+        
+        // Create blob and download
+        const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `declarations_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        console.log('✅ CSV téléchargé avec succès');
+    } catch (error) {
+        console.error('❌ Erreur lors du téléchargement CSV:', error);
+        alert(`❌ Erreur lors du téléchargement CSV:\n\n${error.message}\n\nVeuillez vérifier la console pour plus de détails.`);
+    }
 }
 
 // Show history modal
