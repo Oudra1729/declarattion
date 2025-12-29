@@ -76,7 +76,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 25px;
-            font-size: 13px;
+            font-size: 16px;
         }
 
         .doc-left {
@@ -96,7 +96,7 @@
         /* Subject Section with bullets */
         .subject-section {
             margin-bottom: 20px;
-            font-size: 13px;
+            font-size: 16px;
             line-height: 1.6;
         }
 
@@ -120,7 +120,7 @@
         /* Intro text */
         .intro-text {
             text-align: left;
-            font-size: 13px;
+            font-size: 16px;
             line-height: 1.8;
             margin-bottom: 15px;
             text-indent: 0;
@@ -129,7 +129,7 @@
 
         /* Main content sections - with horizontal lines */
         .info-section {
-            font-size: 13px;
+            font-size: 16px;
             line-height: 1.7;
             margin-bottom: 0;
             border-bottom: 1px solid #000;
@@ -168,7 +168,8 @@
         /* Footer */
         .document-footer {
             margin-top: auto;
-            padding-top: 50px;
+            padding-top: 0px;
+            padding-bottom: 30px;
             text-align: right;
             font-size: 12px;
             font-weight: bold;
@@ -218,6 +219,7 @@
                 margin: 0;
                 padding: 0;
                 background: white;
+                font-size: 16px;
             }
             
             .no-print {
@@ -233,12 +235,55 @@
                 page-break-inside: avoid;
             }
             
+            /* Standardize all font sizes for printing */
+            .company-name,
+            .company-center {
+                font-size: 16px !important;
+            }
+            
+            .company-details {
+                font-size: 16px !important;
+            }
+            
+            .title-section {
+                font-size: 16px !important;
+            }
+            
+            .doc-number-section,
+            .doc-number {
+                font-size: 16px !important;
+            }
+            
+            .subject-section,
+            .subject-line,
+            .subject-line::before,
+            .reference-line {
+                font-size: 16px !important;
+            }
+            
+            .intro-text {
+                font-size: 16px !important;
+            }
+            
+            .info-section,
+            .info-section strong {
+                font-size: 16px !important;
+            }
+            
+            .quantities-label,
+            .quantities-content,
+            .quantities-item {
+                font-size: 16px !important;
+            }
+            
             .document-footer {
                 position: fixed;
                 bottom: 80px;
                 right: 40px;
                 margin-top: 0;
                 padding-top: 0;
+                padding-bottom: 100px;
+                font-size: 16px !important;
             }
             
             html {
@@ -341,6 +386,7 @@
         <div class="info-section">
             <strong>CONVOYEUR :</strong> <span id="convoyeurName"></span><br>
             CCE : <span id="convoyeurCard">-</span><br>
+            <span id="convoyeurCCEDates"></span>
             CIN : <span id="convoyeurCIN"></span> - Tel : <span id="convoyeurPhone"></span>
         </div>
 
@@ -440,6 +486,33 @@
             // Fill convoyeur info
             document.getElementById('convoyeurName').textContent = declaration.convoyeurName || '';
             document.getElementById('convoyeurCard').textContent = declaration.convoyeurCard || '-';
+            
+            // Fill CCE dates
+            const cceDatesElement = document.getElementById('convoyeurCCEDates');
+            if (declaration.convoyeurCCEValableDu || declaration.convoyeurCCEExpiry) {
+                let cceDatesText = '';
+                if (declaration.convoyeurCCEValableDu) {
+                    const valableDuDate = new Date(declaration.convoyeurCCEValableDu);
+                    if (!isNaN(valableDuDate.getTime())) {
+                        cceDatesText += `Valable du : ${formatDateOnly(valableDuDate)}`;
+                    }
+                }
+                if (declaration.convoyeurCCEExpiry) {
+                    const expiryDate = new Date(declaration.convoyeurCCEExpiry);
+                    if (!isNaN(expiryDate.getTime())) {
+                        if (cceDatesText) cceDatesText += ' - ';
+                        cceDatesText += `Expire le : ${formatDateOnly(expiryDate)}`;
+                    }
+                }
+                if (cceDatesText) {
+                    cceDatesElement.textContent = cceDatesText + '\n';
+                } else {
+                    cceDatesElement.textContent = '';
+                }
+            } else {
+                cceDatesElement.textContent = '';
+            }
+            
             document.getElementById('convoyeurCIN').textContent = declaration.convoyeurCIN || '';
             document.getElementById('convoyeurPhone').textContent = declaration.convoyeurPhone || '';
 

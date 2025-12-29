@@ -552,6 +552,8 @@ function declarationToCSVRow(declaration) {
         declaration.vehicleMatricule || '',
         declaration.convoyeurName || '',
         declaration.convoyeurCard || '',
+        declaration.convoyeurCCEValableDu || '',
+        declaration.convoyeurCCEExpiry || '',
         declaration.convoyeurCIN || '',
         declaration.convoyeurPhone || '',
         productsStr,
@@ -585,6 +587,8 @@ function getCSVHeader() {
         'Matricule Véhicule',
         'Convoyeur',
         'Carte de Contrôle Convoyeur',
+        'CCE Valable du',
+        'CCE Date d\'expiration',
         'CIN Convoyeur',
         'Téléphone Convoyeur',
         'Produits',
@@ -1056,6 +1060,12 @@ function populateFormFromDeclaration(declaration) {
     if (declaration.convoyeurCard) {
         document.getElementById('convoyeurCard').value = declaration.convoyeurCard;
     }
+    if (declaration.convoyeurCCEValableDu) {
+        document.getElementById('convoyeurCCEValableDu').value = declaration.convoyeurCCEValableDu;
+    }
+    if (declaration.convoyeurCCEExpiry) {
+        document.getElementById('convoyeurCCEExpiry').value = declaration.convoyeurCCEExpiry;
+    }
     if (declaration.convoyeurCIN) {
         document.getElementById('convoyeurCIN').value = declaration.convoyeurCIN;
     }
@@ -1372,6 +1382,17 @@ function setupEventListeners() {
             document.getElementById('convoyeurCard').value = convoyeur.cce || convoyeur.card || '';
             document.getElementById('convoyeurCIN').value = convoyeur.cin || '';
             document.getElementById('convoyeurPhone').value = convoyeur.phone || '';
+            // Fill CCE dates if available
+            if (convoyeur.cceValableDu) {
+                document.getElementById('convoyeurCCEValableDu').value = convoyeur.cceValableDu;
+            } else {
+                document.getElementById('convoyeurCCEValableDu').value = '';
+            }
+            if (convoyeur.cceExpiry) {
+                document.getElementById('convoyeurCCEExpiry').value = convoyeur.cceExpiry;
+            } else {
+                document.getElementById('convoyeurCCEExpiry').value = '';
+            }
         } else {
             clearConvoyeurFields();
         }
@@ -1878,6 +1899,8 @@ async function saveNewConvoyeur() {
     const cin = document.getElementById('addConvoyeurCIN').value.trim();
     const phone = document.getElementById('addConvoyeurPhone').value.trim();
     const cce = document.getElementById('addConvoyeurCCE').value.trim();
+    const cceValableDu = document.getElementById('addConvoyeurCCEValableDu').value;
+    const cceExpiry = document.getElementById('addConvoyeurCCEExpiry').value;
 
     if (!name || !cin || !phone) {
         alert('Veuillez remplir les champs Nom, CIN et Téléphone.');
@@ -1893,6 +1916,12 @@ async function saveNewConvoyeur() {
 
     if (cce) {
         newConvoyeur.cce = cce;
+    }
+    if (cceValableDu) {
+        newConvoyeur.cceValableDu = cceValableDu;
+    }
+    if (cceExpiry) {
+        newConvoyeur.cceExpiry = cceExpiry;
     }
 
     // Update lists
@@ -1923,6 +1952,8 @@ async function saveNewConvoyeur() {
     document.getElementById('addConvoyeurCIN').value = '';
     document.getElementById('addConvoyeurPhone').value = '';
     document.getElementById('addConvoyeurCCE').value = '';
+    document.getElementById('addConvoyeurCCEValableDu').value = '';
+    document.getElementById('addConvoyeurCCEExpiry').value = '';
 
     closeAddConvoyeurModal();
     alert('Convoyeur ajouté avec succès !');
@@ -2061,6 +2092,8 @@ function clearConvoyeurFields() {
     document.getElementById('convoyeurCard').value = '';
     document.getElementById('convoyeurCIN').value = '';
     document.getElementById('convoyeurPhone').value = '';
+    document.getElementById('convoyeurCCEValableDu').value = '';
+    document.getElementById('convoyeurCCEExpiry').value = '';
 }
 
 // Populate product dropdowns
@@ -2346,6 +2379,8 @@ async function generateDeclaration() {
         convoyeurId: convoyeurId,
         convoyeurName: convoyeur ? convoyeur.name : '',
         convoyeurCard: document.getElementById('convoyeurCard').value,
+        convoyeurCCEValableDu: document.getElementById('convoyeurCCEValableDu').value,
+        convoyeurCCEExpiry: document.getElementById('convoyeurCCEExpiry').value,
         convoyeurCIN: document.getElementById('convoyeurCIN').value,
         convoyeurPhone: document.getElementById('convoyeurPhone').value,
         products: formProducts,

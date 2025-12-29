@@ -169,6 +169,16 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="convoyeurCCEValableDu">Valable du (Date de création)</label>
+                            <input type="date" id="convoyeurCCEValableDu" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="convoyeurCCEExpiry">Date d'expiration</label>
+                            <input type="date" id="convoyeurCCEExpiry" class="form-control">
+                        </div>
+
+                        <div class="form-group">
                             <label for="convoyeurCIN">N° CIN</label>
                             <input type="text" id="convoyeurCIN" class="form-control" placeholder="Auto-rempli (modifiable)">
                         </div>
@@ -366,6 +376,14 @@
                 <div class="form-group">
                     <label>N° Carte de Contrôle (CCE)</label>
                     <input type="text" id="addConvoyeurCCE" class="form-control" placeholder="Optionnel">
+                </div>
+                <div class="form-group">
+                    <label>Valable du (Date de création)</label>
+                    <input type="date" id="addConvoyeurCCEValableDu" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Date d'expiration</label>
+                    <input type="date" id="addConvoyeurCCEExpiry" class="form-control">
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
                     <button class="btn btn-secondary" type="button" onclick="closeAddConvoyeurModal()">Annuler</button>
