@@ -255,11 +255,9 @@
 
         <!-- Subject and Reference -->
         <div class="subject-section">
-            <div class="subject-line">
                 <div>
                     <strong>Objet</strong> : Enlèvement des explosifs et accessoires
                 </div>
-            </div>
             
             <div class="reference-line">
                 <strong>Référence</strong> : MESSAGES n°636/4 SPJ et 457/SPA Commandement de la Gendarmerie Royale du 26.06.1988.
@@ -273,7 +271,7 @@
 
         <!-- Main Information -->
         <div class="info-section">
-            <strong>DATE DE DEPART :</strong> <span id="dateDepart"></span>
+            <strong>DATE DE DEPART :</strong> <span id="dateDepartDate"></span> à <span id="dateDepartTime"></span>
         </div>
 
         <div class="info-section">
@@ -308,7 +306,8 @@
         </div>
 
         <!-- Bon de Livraison -->
-        <div class="info-section no-border">
+        <!-- if bon de livraison is not empty, display it with label   -->
+        <div class="info-section no-border" id="bonLivraisonSection" style="display: none;">
             <strong>BON DE LIVRAISON : <span id="bonLivraison"></span></strong>
         </div>
 
@@ -356,8 +355,11 @@
             // Fill formatted date
             document.getElementById('docDate').textContent = formatDayOfWeek(dateObj);
 
-            // Fill date de départ
-            document.getElementById('dateDepart').textContent = formatDateDepart(dateDepartObj);
+            // Fill date de départ - separate date and time
+            const datePart = formatDateOnly(dateDepartObj);
+            const timePart = formatTimeOnly(dateDepartObj);
+            document.getElementById('dateDepartDate').textContent = datePart;
+            document.getElementById('dateDepartTime').textContent = timePart;
 
             // Fill destinataire
             document.getElementById('destinataire').textContent = declaration.destination || '';
@@ -404,7 +406,14 @@
             document.getElementById('passavantExpiry').textContent = formatPassavantExpiry(passavantExpiryObj);
 
             // Fill bon de livraison
-            document.getElementById('bonLivraison').textContent = declaration.bonLivraison || '';
+            // if bon de livraison is not empty, display it with label
+            const bonLivraisonSection = document.getElementById('bonLivraisonSection');
+            if (declaration.bonLivraison && declaration.bonLivraison.trim() !== '') {
+                document.getElementById('bonLivraison').textContent = declaration.bonLivraison;
+                bonLivraisonSection.style.display = 'block';
+            } else {
+                bonLivraisonSection.style.display = 'none';
+            }       
         }
 
         function formatMonthYear(date) {
@@ -422,15 +431,21 @@
             return `${dayName} ${day}`;
         }
 
-        function formatDateDepart(date) {
+        function formatDateOnly(date) {
             if (!date || isNaN(date.getTime())) return '';
             const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 
                           'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
             const day = date.getDate();
             const month = months[date.getMonth()];
             const year = date.getFullYear();
+            return `${day} ${month.toUpperCase()} ${year}`;
+        }
+
+        function formatTimeOnly(date) {
+            if (!date || isNaN(date.getTime())) return '';
             const hours = String(date.getHours()).padStart(2, '0');
-            return `${day} ${month.toUpperCase()} ${year} à ${hours} H du matin`;
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours} H ${minutes}`;
         }
 
         function formatPassavantExpiry(date) {

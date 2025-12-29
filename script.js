@@ -58,6 +58,13 @@ function reconstructDriver(driver) {
     return reconstructed;
 }
 
+// Helper function to combine date and time into datetime string
+function combineDateAndTime(date, time) {
+    if (!date) return '';
+    if (!time) return date;
+    return `${date}T${time}`;
+}
+
 // Helper function to reconstruct client data (convert itineraire string to array)
 function reconstructClient(client) {
     const reconstructed = { ...client };
@@ -1028,13 +1035,17 @@ function populateFormFromDeclaration(declaration) {
         document.getElementById('date').value = declaration.date;
     }
     if (declaration.dateDepart) {
-        // Handle datetime-local format
+        // Split datetime into date and time
         let dateDepartValue = declaration.dateDepart;
-        if (!dateDepartValue.includes('T')) {
-            // If it's just a date, add time
-            dateDepartValue = dateDepartValue + 'T00:00';
+        if (dateDepartValue.includes('T')) {
+            const [datePart, timePart] = dateDepartValue.split('T');
+            document.getElementById('dateDepartDate').value = datePart || '';
+            document.getElementById('dateDepartTime').value = timePart ? timePart.substring(0, 5) : '';
+        } else {
+            // If it's just a date, use it and leave time empty
+            document.getElementById('dateDepartDate').value = dateDepartValue;
+            document.getElementById('dateDepartTime').value = '';
         }
-        document.getElementById('dateDepart').value = dateDepartValue;
     }
     
     // Products
@@ -2221,7 +2232,7 @@ function generateSummary() {
         <div class="summary-item">
             <strong>N° Document:</strong> ${document.getElementById('documentNumber').value || 'N/A'}<br>
             <strong>Date:</strong> ${document.getElementById('date').value || 'N/A'}<br>
-            <strong>Date Départ:</strong> ${document.getElementById('dateDepart').value || 'N/A'}
+            <strong>Date Départ:</strong> ${document.getElementById('dateDepartDate').value || 'N/A'} ${document.getElementById('dateDepartTime').value || 'N/A'}
         </div>
     `;
 }
@@ -2282,7 +2293,10 @@ async function generateDeclaration() {
         timestamp: isEditing ? history[existingDeclarationIndex].timestamp : new Date().toISOString(), // Keep original timestamp if editing
         documentNumber: docNumber,
         date: document.getElementById('date').value,
-        dateDepart: document.getElementById('dateDepart').value,
+        dateDepart: combineDateAndTime(
+            document.getElementById('dateDepartDate').value,
+            document.getElementById('dateDepartTime').value
+        ),
         clientId: clientId,
         clientName: client ? client.name : '',
         destination: document.getElementById('destination').value,
